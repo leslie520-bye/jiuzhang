@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>数学诊断报告</title>
+<style>
+@page{margin:0;size:A4}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;color:#1a1a2e;margin:0;padding:0;background:#f4f5f7}
+.page{width:210mm;min-height:297mm;background:#fff;margin:20px auto;padding:0;box-shadow:0 2px 20px rgba(0,0,0,.1);position:relative;overflow:hidden}
+.cover{min-height:297mm;background:linear-gradient(135deg,#1a1a2e 0%,#25254a 100%);color:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:40px;position:relative}
+.cover::after{content:'';position:absolute;bottom:0;left:0;right:0;height:6px;background:#e8912e}
+.cover .badge{background:#e8912e;color:#fff;padding:6px 24px;border-radius:20px;font-size:13px;font-weight:600;letter-spacing:2px;margin-bottom:40px}
+.cover h1{font-size:36px;font-weight:700;margin:0 0 12px;letter-spacing:3px}
+.cover h1 span{color:#e8912e}
+.cover .sub{font-size:16px;opacity:.7;margin-bottom:60px;letter-spacing:1px}
+.cover .meta{border-top:1px solid rgba(255,255,255,.15);padding-top:30px;width:80%;display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:left}
+.cover .meta .item{display:flex;justify-content:space-between;align-items:center;padding:6px 12px}
+.cover .meta .item .label{font-size:12px;opacity:.6}
+.cover .meta .item .value{font-size:15px;font-weight:600}
+.cover .footer{position:absolute;bottom:30px;font-size:11px;opacity:.35}
+.section{padding:28px 36px 20px;border-bottom:1px solid #e8e8ec}
+.section:last-child{border-bottom:none}
+.section h2{font-size:17px;font-weight:700;margin:0 0 14px;border-left:4px solid #e8912e;padding-left:14px}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.summary-card{background:#f9f9fb;padding:14px;border-radius:10px;text-align:center;border:1px solid #eeeef2}
+.summary-card .num{font-size:26px;font-weight:800;line-height:1.2}
+.summary-card .num.w{color:#d48120}.summary-card .num.d{color:#c0392b}.summary-card .num.g{color:#27ae60}
+.summary-card .lbl{font-size:12px;color:#8a8a9a;margin-top:4px;font-weight:500}
+.module-bars{margin:6px 0 14px}
+.module-bar-row{display:flex;align-items:center;gap:8px;padding:3px 0}
+.module-bar-row .mb-lbl{font-size:12px;min-width:80px;color:#5a5a72;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.module-bar-row .mb-bar{flex:1;height:10px;background:#e8e8ec;border-radius:5px;overflow:hidden}
+.module-bar-row .mb-bar .mb-fill{height:100%;border-radius:5px}
+.module-bar-row .mb-pct{font-size:13px;font-weight:700;min-width:34px;text-align:right}
+.sub-row{display:flex;align-items:center;gap:4px;padding:1px 0;font-size:10px}
+.sub-row .sub-lbl{min-width:80px;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sub-row .sub-bar{flex:1;height:4px;background:#e8e8ec;border-radius:2px;overflow:hidden}
+.sub-row .sub-bar .sub-fill{height:100%;border-radius:2px}
+.sub-row .sub-pct{font-weight:600;min-width:26px;text-align:right;color:#888}
+.error-tags{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0}
+.error-tag{padding:2px 10px;border-radius:10px;font-size:10px;font-weight:600;border:1px solid}
+.cause-row{display:flex;align-items:center;gap:8px;padding:3px 0}
+.cause-row .ca-lbl{font-size:12px;min-width:110px;color:#5a5a72;font-weight:500}
+.cause-row .ca-bar{flex:1;height:8px;background:#e8e8ec;border-radius:4px;overflow:hidden}
+.cause-row .ca-bar .ca-fill{height:100%;border-radius:4px}
+.cause-row .ca-pct{font-size:12px;font-weight:700;min-width:30px;text-align:right}
+.text-block{font-size:12px;line-height:1.8;color:#555;white-space:pre-wrap;background:#f9f9fb;padding:10px 14px;border-radius:8px;margin:6px 0;border:1px solid #eeeef2}
+.rpt-table{width:100%;font-size:12px;border-collapse:collapse;margin:8px 0}
+.rpt-table th{background:#f4f5f7;padding:6px 10px;text-align:left;font-weight:600;font-size:11px;border-bottom:2px solid #e8e8ec}
+.rpt-table td{padding:5px 10px;border-bottom:1px solid #eeeef2}
+@media print{.page{margin:0;box-shadow:none;page-break-after:always}body{background:#fff}.section{page-break-inside:avoid}.no-print{display:none!important}}
+.no-print{text-align:center;padding:20px}
+.no-print button{padding:10px 30px;font-size:14px;font-weight:600;border:none;border-radius:8px;cursor:pointer;margin:0 5px}
+</style>
+</head>
+<body>
+<div class="no-print">
+<button onclick="window.print()" style="background:#e8912e;color:#fff">保存为PDF</button>
+<button onclick="window.close()" style="background:#1a1a2e;color:#fff">关闭</button>
+</div>
+<div id="reportRoot"><div style="text-align:center;padding:80px 20px;color:#888;font-size:15px">加载诊断报告中...</div></div>
+<script>
+var p=new URLSearchParams(window.location.search),id=p.get('id');
+if(id)fetch('/api/diagnosis/'+id).then(function(r){return r.json()}).then(function(d){
+  if(d.success&&d.data)R(d.data);else document.getElementById('reportRoot').innerHTML='<div style="text-align:center;padding:80px 20px;color:#c0392b">未找到诊断报告</div>';
+}).catch(function(){document.getElementById('reportRoot').innerHTML='<div style="text-align:center;padding:80px 20px;color:#c0392b">加载失败</div>'});
+else document.getElementById('reportRoot').innerHTML='<div style="text-align:center;padding:80px 20px;color:#c0392b">缺少诊断ID</div>';
+function R(d){
+  var gc={'初一':'#2471a3','初二':'#1e8449','初三':'#d48120','高一':'#c0392b','高二':'#7d3c98','高三':'#b7770e'};
+  var cl=d.avg_percentage<40?'d':(d.avg_percentage<65?'w':(d.avg_percentage<85?'w':'g'));
+  var lbl=d.avg_percentage<40?'需紧急提升':(d.avg_percentage<65?'需重点加强':(d.avg_percentage<85?'良好':'优秀'));
+  var gap='--';if(d.current_score&&d.target_score){var cs=parseInt(d.current_score.split('/')[0]),ts=parseInt(d.target_score.split('/')[0]);if(!isNaN(cs)&&!isNaN(ts))gap=(ts-cs)+'分'}
+  var h='<div class="page"><div class="cover"><div class="badge">数学诊断报告</div><h1><span>数学</span>诊断报告</h1><div class="sub">'+d.grade+' · '+d.student_name+'</div>';
+  h+='<div class="meta"><div class="item"><span class="label">学生姓名</span><span class="value">'+(d.student_name||'--')+'</span></div><div class="item"><span class="label">年级</span><span class="value">'+(d.grade||'--')+'</span></div>';
+  h+='<div class="item"><span class="label">当前分数</span><span class="value">'+(d.current_score||'未填写')+'</span></div><div class="item"><span class="label">目标分数</span><span class="value">'+(d.target_score||'未填写')+'</span></div>';
+  h+='<div class="item"><span class="label">诊断日期</span><span class="value">'+(d.created_at||'--')+'</span></div><div class="item"><span class="label">综合正确率</span><span class="value">'+(d.avg_percentage||0)+'%</span></div>';
+  h+='</div><div class="footer">数学诊断工作台 · 专业报告</div></div></div>';
+  h+='<div class="page"><div class="section"><h2>诊断概览</h2><div class="summary-grid">';
+  h+='<div class="summary-card"><div class="num '+cl+'">'+(d.avg_percentage||0)+'%</div><div class="lbl">综合正确率</div></div>';
+  h+='<div class="summary-card"><div class="num '+cl+'">'+lbl+'</div><div class="lbl">总体评价</div></div>';
+  h+='<div class="summary-card"><div class="num">'+(d.modules?d.modules.length:0)+'</div><div class="lbl">检测模块</div></div>';
+  h+='<div class="summary-card"><div class="num'+(gap!='--'?' w':'')+'">'+gap+'</div><div class="lbl">目标差距</div></div></div></div>';
+  if(d.exam_scores&&d.exam_scores.length>0){
+    h+='<div class="section"><h2>近期考试成绩</h2><table class="rpt-table"><tr><th>#</th><th>成绩</th></tr>';
+    d.exam_scores.forEach(function(s,i){h+='<tr><td>第'+(i+1)+'次</td><td>'+s+'</td></tr>'});h+='</table></div>'}
+  if(d.modules&&d.modules.length>0){
+    h+='<div class="section"><h2>知识点掌握分析</h2><div class="module-bars">';
+    d.modules.forEach(function(m){
+      var mc=m.module_avg<40?'#c0392b':(m.module_avg<65?'#d48120':(m.module_avg<85?'#2471a3':'#27ae60'));
+      h+='<div class="module-bar-row"><span class="mb-lbl">'+m.module_name+'</span><div class="mb-bar"><div class="mb-fill" style="width:'+m.module_avg+'%;background:'+mc+'"></div></div><span class="mb-pct">'+m.module_avg+'%</span></div>';
+      if(m.subtopics&&m.subtopics.length>0){
+        h+='<div style="padding-left:90px;margin-bottom:4px">';
+        m.subtopics.forEach(function(st){var sc=st.percentage<40?'#c0392b':(st.percentage<65?'#d48120':'#27ae60');h+='<div class="sub-row"><span class="sub-lbl">'+st.subtopic_name+'</span><div class="sub-bar"><div class="sub-fill" style="width:'+st.percentage+'%;background:'+sc+'"></div></div><span class="sub-pct">'+st.percentage+'%</span></div>';});h+='</div>'}
+      if(m.error_types&&m.error_types.length>0){
+        var em={c:'概念',l:'计算',m:'方法',e:'审题'},ec={c:'#2471a3',l:'#d48120',m:'#27ae60',e:'#8e44ad'};
+        h+='<div style="padding-left:90px;margin-bottom:4px"><div class="error-tags">';
+        m.error_types.forEach(function(e){h+='<span class="error-tag" style="background:'+ec[e]+'22;color:'+ec[e]+';border-color:'+ec[e]+'44">'+(em[e]||e)+'</span>'});h+='</div></div>'}
+    });h+='</div></div>'}
+  if(d.cause_data&&Object.keys(d.cause_data).length>0){
+    var al={a:'概念理解不清',b:'计算能力不足',c:'解题方法缺失',d:'审题与考试策略'},ac={a:'#2471a3',b:'#d48120',c:'#27ae60',d:'#8e44ad'};
+    h+='<div class="section"><h2>失分原因分析</h2>';
+    Object.keys(d.cause_data).sort(function(x,y){return d.cause_data[y]-d.cause_data[x]}).forEach(function(k){
+      h+='<div class="cause-row"><span class="ca-lbl">'+(al[k]||k)+'</span><div class="ca-bar"><div class="ca-fill" style="width:'+d.cause_data[k]+'%;background:'+(ac[k]||'#888')+'"></div></div><span class="ca-pct">'+d.cause_data[k]+'%</span></div>';
+    });h+='</div>'}
+  // Learning habits section
+  if(d.learning_habits&&Object.keys(d.learning_habits).length>0){
+    var lh={ct:'错题本',dr:'草稿纸',tt:'限时训练',qa:'课堂提问',rv:'课后复习',hw:'作业独立'};
+    h+='<div class="section"><h2>学习习惯诊断</h2><div style="font-size:12px;line-height:2;color:#555">';
+    Object.keys(d.learning_habits).forEach(function(k){
+      var v=d.learning_habits[k];
+      if(v&&v.l)h+='<div style="display:flex;gap:8px;border-bottom:1px solid #f4f5f7;padding:2px 0"><span style="font-weight:600;min-width:80px">'+(lh[k]||k)+'</span><span>'+v.l+'</span><span style="margin-left:auto;color:'+(v.v>=2?'#27ae60':'#d48120')+'">'+(v.v>=2?'好':'需改进')+'</span></div>';
+    });h+='</div></div>'}
+  // Competitive position section
+  if(d.competitive_position&&(d.competitive_position.class||d.competitive_position.grade||d.competitive_position.level)){
+    var cmp=d.competitive_position;
+    h+='<div class="section"><h2>竞争力评估</h2><div style="font-size:12px;line-height:2;color:#555">';
+    if(cmp.class)h+='班级排名: '+cmp.class+'<br>';
+    if(cmp.grade)h+='年级排名: '+cmp.grade+'<br>';
+    if(cmp.level){var lm={top:'优等(前10%)',mid_top:'中上(前30%)',mid:'中游',mid_low:'中下游',bottom:'靠后'};h+='自我定位: '+(lm[cmp.level]||cmp.level);}
+    if(cmp.class||cmp.grade){
+      var parts=(cmp.class||cmp.grade).split('/');
+      if(parts.length==2&&parseInt(parts[0])>0&&parseInt(parts[1])>0){
+        var pct=Math.round(parseInt(parts[0])/parseInt(parts[1])*100);
+        h+='<br><div style="font-size:11px;color:#888;margin-top:4px">年级前 '+pct+'%'+(pct<10?' 优等生':(pct<30?' 中上':(pct<60?' 中游':' 需要追赶')))+'</div><div style="height:6px;background:#e8e8ec;border-radius:3px;margin-top:2px"><div style="height:100%;width:'+pct+'%;border-radius:3px;background:'+(pct<10?'#27ae60':(pct<30?'#2471a3':'#d48120'))+'"></div></div>';
+      }}
+    h+='</div></div>'}
+  // Exam strategy section
+  if(d.exam_strategy&&Object.keys(d.exam_strategy).length>0){
+    var es={time:'时间管理',skip:'压轴题策略',anxiety:'考试焦虑',check:'检查习惯',order:'做题顺序',calc:'计算失误'};
+    h+='<div class="section"><h2>考试策略诊断</h2><div style="font-size:12px;line-height:2;color:#555">';
+    Object.keys(d.exam_strategy).forEach(function(k){
+      var v=d.exam_strategy[k];
+      if(v&&v.l)h+='<div style="display:flex;gap:8px;border-bottom:1px solid #f4f5f7;padding:2px 0"><span style="font-weight:600;min-width:80px">'+(es[k]||k)+'</span><span>'+v.l+'</span><span style="margin-left:auto;color:'+(v.v>=2?'#27ae60':'#d48120')+'">'+(v.v>=2?'好':'需改进')+'</span></div>';
+    });h+='</div></div>'}
+  if(d.teacher_observation||d.parent_requirement||d.student_feedback){
+   h+='<div class="section"><h2>三方反馈</h2>';
+    if(d.teacher_observation)h+='<div style="margin-bottom:4px"><div style="font-size:12px;font-weight:600;margin-bottom:2px">教师观察</div><div class="text-block">'+d.teacher_observation+'</div></div>';
+    if(d.parent_requirement)h+='<div style="margin-bottom:4px"><div style="font-size:12px;font-weight:600;margin-bottom:2px">家长需求</div><div class="text-block">'+d.parent_requirement+'</div></div>';
+    if(d.student_feedback)h+='<div style="margin-bottom:4px"><div style="font-size:12px;font-weight:600;margin-bottom:2px">学生自述</div><div class="text-block">'+d.student_feedback+'</div></div>';
+    h+='</div>'}
+  document.getElementById('reportRoot').innerHTML=h;};
+</script>
+</body>
+</html>
