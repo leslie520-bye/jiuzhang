@@ -11,7 +11,11 @@ async function initDB(SQL) {
     db = new SQL.Database();
   }
   db.run("PRAGMA foreign_keys = ON");
-  db.run("CREATE TABLE IF NOT EXISTS diagnoses (id INTEGER PRIMARY KEY AUTOINCREMENT,student_name TEXT NOT NULL,grade TEXT NOT NULL,current_score TEXT DEFAULT '',target_score TEXT DEFAULT '',teacher_observation TEXT DEFAULT '',parent_requirement TEXT DEFAULT '',student_feedback TEXT DEFAULT '',avg_percentage REAL DEFAULT 0,exam_scores TEXT DEFAULT '[]',cause_data TEXT DEFAULT '{}',full_report TEXT DEFAULT '',created_at DATETIME DEFAULT (datetime('now','localtime')))");
+  db.run("CREATE TABLE IF NOT EXISTS diagnoses (id INTEGER PRIMARY KEY AUTOINCREMENT,student_name TEXT NOT NULL,grade TEXT NOT NULL,current_score TEXT DEFAULT '',target_score TEXT DEFAULT '',teacher_observation TEXT DEFAULT '',parent_requirement TEXT DEFAULT '',student_feedback TEXT DEFAULT '',avg_percentage REAL DEFAULT 0,exam_scores TEXT DEFAULT '[]',cause_data TEXT DEFAULT '{}',full_report TEXT DEFAULT '',created_at DATETIME DEFAULT (datetime('now','localtime')))")
+  try { db.run("ALTER TABLE diagnoses ADD COLUMN learning_habits TEXT DEFAULT '{}'"); } catch(e) {}
+  try { db.run("ALTER TABLE diagnoses ADD COLUMN competitive_position TEXT DEFAULT '{}'"); } catch(e) {}
+  try { db.run("ALTER TABLE diagnoses ADD COLUMN exam_strategy TEXT DEFAULT '{}'"); } catch(e) {}
+  db.run("CREATE TABLE IF NOT EXISTS course_plans (id INTEGER PRIMARY KEY AUTOINCREMENT,diagnosis_id INTEGER DEFAULT 0,student_name TEXT NOT NULL,grade TEXT NOT NULL,total_hours INTEGER DEFAULT 0,weeks_count INTEGER DEFAULT 0,plan_data TEXT DEFAULT '{}',created_at TEXT DEFAULT (datetime('now','localtime')))");;
   db.run("CREATE TABLE IF NOT EXISTS module_results (id INTEGER PRIMARY KEY AUTOINCREMENT,diagnosis_id INTEGER NOT NULL,module_name TEXT NOT NULL,module_avg REAL DEFAULT 0,error_types TEXT DEFAULT '[]',FOREIGN KEY (diagnosis_id) REFERENCES diagnoses(id) ON DELETE CASCADE)");
   db.run("CREATE TABLE IF NOT EXISTS subtopic_results (id INTEGER PRIMARY KEY AUTOINCREMENT,module_result_id INTEGER NOT NULL,subtopic_name TEXT NOT NULL,percentage REAL DEFAULT 0,FOREIGN KEY (module_result_id) REFERENCES module_results(id) ON DELETE CASCADE)");
   _save();
@@ -40,10 +44,10 @@ function saveDiagnosis(data) {
   const avg = (data.modules||[]).length > 0 ? Math.round(data.modules.reduce((s,m) => s+(m.module_avg||0),0)/data.modules.length) : 0;
  _run("INSERT INTO diagnoses(student_name,grade,current_score,target_score,teacher_observation,parent_requirement,student_feedback,avg_percentage,exam_scores,cause_data,learning_habits,competitive_position,exam_strategy,full_report) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
    [data.student_name, data.grade, data.current_score||'', data.target_score||'', data.teacher_observation||'', data.parent_requirement||'', data.student_feedback||'', avg, JSON.stringify(data.exam_scores||[]), JSON.stringify(data.cause_data||{}), JSON.stringify(data.learning_habits||{}), JSON.stringify(data.competitive_position||{}), JSON.stringify(data.exam_strategy||{}), data.full_report||'']);
-  const rows = _q("SELECT last_insert_rowid() as id"); const diagId = rows[0].id;
+  const rows = _q("SELECT COALESCE(MAX(id), 0) as id FROM diagnoses"); const diagId = rows[0].id;
   if (data.modules) data.modules.forEach(m => {
     _run("INSERT INTO module_results(diagnosis_id,module_name,module_avg,error_types) VALUES(?,?,?,?)", [diagId, m.module_name, m.module_avg||0, JSON.stringify(m.error_types||[])]);
-    const mr = _q("SELECT last_insert_rowid() as id"); const mid = mr[0].id;
+    const mr = _q("SELECT COALESCE(MAX(id), 0) as id FROM module_results"); const mid = mr[0].id;
     if (m.subtopics) m.subtopics.forEach(s => _run("INSERT INTO subtopic_results(module_result_id,subtopic_name,percentage) VALUES(?,?,?)", [mid, s.name, s.pct]));
   });
   return diagId;
@@ -78,7 +82,7 @@ function getStudentTrend(sn) {
  function saveCoursePlan(data) {
    _run("INSERT INTO course_plans(diagnosis_id,student_name,grade,total_hours,weeks_count,plan_data) VALUES(?,?,?,?,?,?)",
      [data.diagnosis_id||0, data.student_name, data.grade, data.total_hours||0, data.weeks_count||0, JSON.stringify(data.plan_data||{})]);
-   const rows = _q("SELECT last_insert_rowid() as id");
+   const rows = _q("SELECT COALESCE(MAX(id), 0) as id FROM course_plans");
    return rows[0].id;
  }
  function listCoursePlans(sn) {
@@ -97,3 +101,6 @@ function getStudentTrend(sn) {
    _run("UPDATE course_plans SET total_hours=?, weeks_count=?, plan_data=? WHERE id=?", [data.total_hours||0, data.weeks_count||0, JSON.stringify(data.plan_data||{}), id]);
  }
  module.exports = { initDB, saveDiagnosis, listDiagnoses, getDiagnosis, listStudents, deleteDiagnosis, getStudentTrend, saveCoursePlan, listCoursePlans, getCoursePlan, deleteCoursePlan, updateCoursePlan };
+
+
+
