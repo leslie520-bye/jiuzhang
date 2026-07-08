@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>数学诊断报告</title>
+<title>九章 · 诊断报告</title>
 <style>
 @page{margin:0;size:A4}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -72,11 +72,11 @@ function R(d){
   var cl=d.avg_percentage<40?'d':(d.avg_percentage<65?'w':(d.avg_percentage<85?'w':'g'));
   var lbl=d.avg_percentage<40?'需紧急提升':(d.avg_percentage<65?'需重点加强':(d.avg_percentage<85?'良好':'优秀'));
   var gap='--';if(d.current_score&&d.target_score){var cs=parseInt(d.current_score.split('/')[0]),ts=parseInt(d.target_score.split('/')[0]);if(!isNaN(cs)&&!isNaN(ts))gap=(ts-cs)+'分'}
-  var h='<div class="page"><div class="cover"><div class="badge">数学诊断报告</div><h1><span>数学</span>诊断报告</h1><div class="sub">'+d.grade+' · '+d.student_name+'</div>';
+  var h='<div class="page"><div class="cover"><div class="badge">九章诊断报告</div><h1><span>九章</span>诊断报告</h1><div class="sub">'+d.grade+' · '+d.student_name+'</div>';
   h+='<div class="meta"><div class="item"><span class="label">学生姓名</span><span class="value">'+(d.student_name||'--')+'</span></div><div class="item"><span class="label">年级</span><span class="value">'+(d.grade||'--')+'</span></div>';
   h+='<div class="item"><span class="label">当前分数</span><span class="value">'+(d.current_score||'未填写')+'</span></div><div class="item"><span class="label">目标分数</span><span class="value">'+(d.target_score||'未填写')+'</span></div>';
   h+='<div class="item"><span class="label">诊断日期</span><span class="value">'+(d.created_at||'--')+'</span></div><div class="item"><span class="label">综合正确率</span><span class="value">'+(d.avg_percentage||0)+'%</span></div>';
-  h+='</div><div class="footer">数学诊断工作台 · 专业报告</div></div></div>';
+  h+='</div><div class="footer">九章 · 专业报告</div></div></div>';
   h+='<div class="page"><div class="section"><h2>诊断概览</h2><div class="summary-grid">';
   h+='<div class="summary-card"><div class="num '+cl+'">'+(d.avg_percentage||0)+'%</div><div class="lbl">综合正确率</div></div>';
   h+='<div class="summary-card"><div class="num '+cl+'">'+lbl+'</div><div class="lbl">总体评价</div></div>';
@@ -144,3 +144,5 @@ function R(d){
 </script>
 </body>
 </html>
+
+

@@ -1,4 +1,4 @@
-ï»¿const env = require('fs').readFileSync('.env','utf-8').split('\n').filter(l=>l.trim()).forEach(l=>{var p=l.split('=');process.env[p[0].trim()]=p.slice(1).join('=').trim()});try{}catch(e){}
+const env = require('fs').readFileSync('.env','utf-8').split('\n').filter(l=>l.trim()).forEach(l=>{var p=l.split('=');process.env[p[0].trim()]=p.slice(1).join('=').trim()});try{}catch(e){}
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -53,8 +53,6 @@ async function start() {
   app.delete('/api/courseplan/:id', (req, res) => {
     try { db.deleteCoursePlan(parseInt(req.params.id)); res.json({ success: true }); } catch(e) { res.status(500).json({ success: false, error: e.message }); }
   });
-
-  
   // Upload exam paper images (base64)
   app.post('/api/upload', (req, res) => {
     try {
@@ -88,7 +86,6 @@ async function start() {
       res.json({ success: true, ...result });
     } catch(e) { res.status(500).json({ success: false, error: e.message }); }
   });
-
 app.listen(PORT, () => { console.log('[Server] AI\u6570\u5b66\u8bca\u65ad\u5de5\u4f5c\u53f0\u5df2\u542f\u52a8'); console.log('[Server] \u8bbf\u95ee: http://localhost:' + PORT); });
 }
 
@@ -110,7 +107,7 @@ async function analyzeWithDeepSeek(files, grade, apiKey) {
         messages: [{
           role: 'user',
           content: [
-            { type: 'text', text: 'ä½ æ˜¯ä¸Šæµ·' + grade + 'æ•°å­¦æ•™å¸ˆã€‚åˆ†æžè¯•å·ï¼Œä¸¥æ ¼æŒ‰JSONè¿”å›žï¼š{"student_name":"","score":"","wrong_questions":[{"number":1,"topic":"","error_type":"æ¦‚å¿µ|è®¡ç®—|æ–¹æ³•|å®¡é¢˜"}],"weak_modules":[{"name":"","avg":0}],"error_distribution":{"c":0,"l":0,"m":0,"e":0},"cause_analysis":{"a":0,"b":0,"c":0,"d":0},"summary":""}' },
+            { type: 'text', text: 'ÄãÊÇÉÏº£' + grade + 'ÊýÑ§½ÌÊ¦¡£·ÖÎöÊÔ¾í£¬ÑÏ¸ñ°´JSON·µ»Ø£º{"student_name":"","score":"","wrong_questions":[{"number":1,"topic":"","error_type":"¸ÅÄî|¼ÆËã|·½·¨|ÉóÌâ"}],"weak_modules":[{"name":"","avg":0}],"error_distribution":{"c":0,"l":0,"m":0,"e":0},"cause_analysis":{"a":0,"b":0,"c":0,"d":0},"summary":""}' },
             ...images
           ]
         }],
@@ -126,31 +123,35 @@ async function analyzeWithDeepSeek(files, grade, apiKey) {
       return { student_name: '', score: '', wrong_questions: [], weak_modules: [], error_distribution: {}, cause_analysis: {}, summary: text.substring(0, 500) };
     }
   } catch(e3) {
-    return { student_name: '', score: '', wrong_questions: [], weak_modules: [], error_distribution: {}, cause_analysis: {}, summary: 'AIåˆ†æžå¤±è´¥: ' + e3.message };
+    return { student_name: '', score: '', wrong_questions: [], weak_modules: [], error_distribution: {}, cause_analysis: {}, summary: 'AI·ÖÎöÊ§°Ü: ' + e3.message };
   }
 }
 
 function analyzeWithMock(files, grade) {
   return {
     student_name: '',
-    score: 'å¾…ç¡®è®¤',
+    score: '´ýÈ·ÈÏ',
     wrong_questions: [
-      { number: 12, topic: 'å‡½æ•°é›¶ç‚¹ä¸Žå‚æ•°èŒƒå›´', error_type: 'æ–¹æ³•' },
-      { number: 19, topic: 'æ•°åˆ—é€šé¡¹ä¸Žæ±‚å’Œ', error_type: 'è®¡ç®—' },
-      { number: 21, topic: 'åœ†é”¥æ›²çº¿å®šç‚¹å®šå€¼', error_type: 'æ–¹æ³•' }
+      { number: 12, topic: 'º¯ÊýÁãµãÓë²ÎÊý·¶Î§', error_type: '·½·¨' },
+      { number: 19, topic: 'ÊýÁÐÍ¨ÏîÓëÇóºÍ', error_type: '¼ÆËã' },
+      { number: 21, topic: 'Ô²×¶ÇúÏß¶¨µã¶¨Öµ', error_type: '·½·¨' }
     ],
     weak_modules: [
-      { name: 'å‡½æ•°ä¸Žå¯¼æ•°ç»¼åˆ', avg: 55 },
-      { name: 'è§£æžå‡ ä½•ç»¼åˆ', avg: 40 },
-      { name: 'æ•°åˆ—ä¸Žä¸ç­‰å¼', avg: 60 }
+      { name: 'º¯ÊýÓëµ¼Êý×ÛºÏ', avg: 55 },
+      { name: '½âÎö¼¸ºÎ×ÛºÏ', avg: 40 },
+      { name: 'ÊýÁÐÓë²»µÈÊ½', avg: 60 }
     ],
     error_distribution: { c: 2, l: 3, m: 5, e: 1 },
     cause_analysis: { a: 20, b: 30, c: 40, d: 10 },
-    summary: 'è–„å¼±ç‚¹ä¸»è¦åœ¨è§£æžå‡ ä½•å’Œå‡½æ•°ç»¼åˆé¢˜ã€‚å»ºè®®åŠ å¼ºåœ†é”¥æ›²çº¿å’Œå‡½æ•°é›¶ç‚¹çš„è®­ç»ƒã€‚'
+    summary: '±¡ÈõµãÖ÷ÒªÔÚ½âÎö¼¸ºÎºÍº¯Êý×ÛºÏÌâ¡£½¨Òé¼ÓÇ¿Ô²×¶ÇúÏßºÍº¯ÊýÁãµãµÄÑµÁ·¡£'
   };
 }
-
 start().catch(e => { console.error('\u542f\u52a8\u5931\u8d25:', e); process.exit(1); });
+
+
+
+
+
 
 
 

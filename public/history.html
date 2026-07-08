@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#1a1a2e">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>诊断历史 - AI数学诊断工作台</title>
+<title>九章 · 诊断历史</title>
 <link rel="stylesheet" href="/styles.css">
 <style>
 .hist-tabs{display:flex;gap:4px;background:#f4f5f7;border-radius:8px;padding:3px;margin-bottom:16px}
@@ -14,7 +14,7 @@
 </head>
 <body>
 <div class="container">
-<header><h1>AI <span>数学诊断</span> 历史</h1><div class="sub">查看和管理所有诊断记录与课程规划</div></header>
+<header><h1><span>九章</span> 诊断历史</h1><div class="sub">九章 · AI数学诊断工作台</div></header>
 <div class="nav"><a href="/">诊断</a><a href="/history.html" class="active">历史记录</a></div>
 
 <div class="hist-tabs">
@@ -95,7 +95,7 @@ async function showDetail(id){
   currentId=id;
   try{const r=await fetch('/api/diagnosis/'+id);const d=await r.json();if(!d.success||!d.data){showT('加载失败');return}
   const diag=d.data;document.getElementById('detailTitle').textContent='- '+diag.student_name+' ('+diag.grade+')';
-  var cnt='=== AI数学诊断报告 ===\n\n学生: '+diag.student_name+' | 年级: '+diag.grade+'\n诊断日期: '+diag.created_at+'\n当前分数: '+(diag.current_score||'--')+' | 目标: '+(diag.target_score||'--')+'\n平均正确率: '+(diag.avg_percentage||0)+'%\n\n';
+  var cnt='=== 九章诊断报告 ===\n\n学生: '+diag.student_name+' | 年级: '+diag.grade+'\n诊断日期: '+diag.created_at+'\n当前分数: '+(diag.current_score||'--')+' | 目标: '+(diag.target_score||'--')+'\n平均正确率: '+(diag.avg_percentage||0)+'%\n\n';
   if(diag.modules&&diag.modules.length){cnt+='=== 模块诊断 ===\n';diag.modules.forEach(function(m){cnt+='  '+m.module_name+': 平均'+m.module_avg+'%\n';if(m.subtopics&&m.subtopics.length){m.subtopics.forEach(function(s){cnt+='    '+s.subtopic_name+': '+s.percentage+'%\n'})}if(m.error_types&&m.error_types.length)cnt+='    错误类型: '+m.error_types.join(', ')+'\n'})}
   if(diag.teacher_observation)cnt+='\n教师观察: '+diag.teacher_observation+'\n';if(diag.parent_requirement)cnt+='家长需求: '+diag.parent_requirement+'\n';if(diag.student_feedback)cnt+='学生自述: '+diag.student_feedback+'\n';
   document.getElementById('detailContent').textContent=cnt;document.getElementById('detailCard').style.display='block'}
@@ -151,3 +151,5 @@ loadData();
 </script>
 </body>
 </html>
+
+

@@ -1,7 +1,7 @@
-{
-  "name": "AI数学诊断工作台",
-  "short_name": "数学诊断",
-  "description": "AI数学诊断工作台 - 初高中知识点诊断系统",
+﻿{
+  "name": "九章",
+  "short_name": "九章",
+  "description": "九章 - AI数学诊断工作台",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f4f5f7",

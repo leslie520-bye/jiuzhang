@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8"><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#1a1a2e"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="数学诊断">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>数学诊断工作台</title>
+<title>九章</title>
 <style>
 :root{--primary:#1a1a2e;--accent:#e8912e;--accent-light:#fef5e7;--bg:#f4f5f7;--card:#fff;--border:#e8e8ec;--text:#1a1a2e;--text-sec:#5a5a72;--text-mu:#8a8a9a;--radius:12px;--shadow:0 1px 4px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.04);--shadow-h:0 4px 16px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.04)}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -57,7 +57,7 @@ header .sub{font-size:15px;opacity:.65;margin-top:4px;position:relative;z-index:
 .btn-group{display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap}
 .rs{display:none;animation:fi .35s ease}
 .rs.v{display:block}
-@keyframes fi{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fi{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 .rsm{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:16px}
 .sb{background:var(--card);padding:16px;border-radius:10px;text-align:center;border:1px solid var(--border)}
 .sb .n{font-size:28px;font-weight:800;color:var(--text);line-height:1.2}
@@ -91,9 +91,17 @@ header .sub{font-size:15px;opacity:.65;margin-top:4px;position:relative;z-index:
 </head>
 <body>
 <div class="container">
-<header><h1><span>数学诊断</span>工作台</h1><div class="sub">初一至高三 · 专业数学诊断</div></header>
+<header><h1><span>九章</span></h1><div class="sub">初一至高三 · AI数学诊断</div></header>
 
-<!-- 试卷上传分析 -->
+
+<div class="nav-bar" style="display:flex;gap:4px;margin-bottom:16px;background:#fff;border-radius:12px;padding:4px;border:1px solid #e8e8ec;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+<a href="#" class="active" data-tab="diagnosis" style="padding:8px 20px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;color:#5a5a72;transition:all .15s" onclick="switchTab('diagnosis')">诊断</a>
+<a href="#" data-tab="plan" style="padding:8px 20px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;color:#5a5a72;transition:all .15s" onclick="switchTab('plan')">课程规划</a>
+<a href="/history.html" style="padding:8px 20px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;color:#5a5a72;transition:all .15s">历史记录</a>
+</div>
+<!-- 诊断模块 -->
+<div id="tab-diagnosis">
+
 <div class="card" style="border:2px dashed #e8912e">
 <h2>试卷上传与AI分析 </h2>
 <p style="font-size:13px;color:#888;margin:-8px 0 12px 18px">上传学生试卷照片，自动分析错题并导入诊断</p>
@@ -141,12 +149,6 @@ header .sub{font-size:15px;opacity:.65;margin-top:4px;position:relative;z-index:
 <h2>知识点诊断 <span class="badge" id="modcnt"></span></h2>
 <p style="font-size:13px;color:var(--text-mu);margin:-8px 0 14px 18px">在每个子知识点右侧填写正确率，留空表示未检测</p>
 <div class="module-grid" id="mg"></div>
-</div>
-
-<div class="card">
-<h2>失分原因分析</h2>
-<p style="font-size:13px;color:var(--text-mu);margin:-8px 0 12px 18px">拖动滑块分配各失分原因占比</p>
-<div class="cg" id="cg"></div>
 </div>
 
 <div class="card">
@@ -208,23 +210,28 @@ header .sub{font-size:15px;opacity:.65;margin-top:4px;position:relative;z-index:
 <button class="btn btn-secondary btn-sm" onclick="copyRpt()">复制报告</button>
 <button class="btn btn-outline btn-sm" onclick="printRpt()">打印</button>
 <button class="btn btn-primary btn-sm" onclick="exportPdf()" style="background:#2980b9">导出PDF</button>
+<button class="btn btn-primary btn-sm" onclick="saveData()" style="background:#e8912e">保存到历史记录</button>
 <button class="btn btn-secondary btn-sm" onclick="generateRoadmap()" style="background:#27ae60">生成路线图</button>
 <button class="btn btn-outline btn-sm" onclick="generateBrief()">课后简报</button>
 </div>
 <div class="rc" id="rc"></div>
 </div>
 
-<div class="card" id="coursePlanSection" style="display:none">
+</div>
+
+<!-- 课程规划模块 -->
+<div id="tab-plan" style="display:none">
+<div class="card" id="coursePlanSection">
 <h2>课程规划 <span id="cpTitle" style="font-weight:400;font-size:14px"></span></h2>
 <div id="cpContent"><div style="text-align:center;padding:20px;color:#888;font-size:13px">先生成诊断报告，然后点击"生成规划"</div></div>
 <div class="btn-group" style="margin-top:12px">
 <button class="btn btn-primary btn-sm" onclick="generateCoursePlan()" style="background:#27ae60">生成规划</button>
 <button class="btn btn-secondary btn-sm" onclick="saveCoursePlan()">保存规划</button>
+<button class="btn btn-primary btn-sm" onclick="exportPlanPdf()" style="background:#2980b9">导出课程PDF</button>
+</div>
 </div>
 </div>
 
-<div class="ft">数学诊断工作台</div>
-</div>
 <div class="ts" id="ts"></div>
 
 <script>
@@ -304,7 +311,7 @@ function getCountdown(){
   }return r;
 }
 var ET=[{id:"c",label:"概念"},{id:"l",label:"计算"},{id:"m",label:"方法"},{id:"e",label:"审题"}];
-var CA=[{id:"a",label:"概念理解不清",desc:"公式记错, 概念混淆"},{id:"b",label:"计算能力不足",desc:"运算速度慢, 粗心大意"},{id:"c",label:"解题方法缺失",desc:"不知从何入手"},{id:"d",label:"审题与考试策略",desc:"漏条件, 时间分配不合理"}];
+// CA removed
 var GC={"初一":"g7","初二":"g8","初三":"g9","高一":"g10","高二":"g11","高三":"g12"};
 function gm(){return MD[document.getElementById("sg").value]||MD["初一"]}
 function onGradeChange(){
@@ -368,14 +375,9 @@ var es=[];document.querySelectorAll('.ec[data-mid="'+m.id+'"]:checked').forEach(
 return{id:m.id,name:m.name,subs:subs,pct:avg,errs:es};
 });
 }
-function gcd(){var r={};document.querySelectorAll(".cs").forEach(function(sl){r[sl.id.replace("cs_","")]=parseInt(sl.value)||0});return r}
+function gcd(){return{a:25,b:25,c:25,d:25}}
 function initC(){
-var grid=document.getElementById("cg");grid.innerHTML="";
-CA.forEach(function(c){
-var d=document.createElement("div");d.className="ci";
-d.innerHTML="<label>"+c.label+"<br><span style='font-weight:400;font-size:11px;color:var(--text-mu)'>"+c.desc+"</span></label><input type='range' class='cs' id='cs_"+c.id+"' min='0' max='100' value='25'><span class='v' id='cv_"+c.id+"'>25%</span>";
-grid.appendChild(d);d.querySelector(".cs").addEventListener("input",function(){document.getElementById("cv_"+c.id).textContent=this.value+"%"});
-});
+// 失分原因分析已移除
 }
 function genReport(){
 var n=document.getElementById("sn").value.trim()||"学生",g=document.getElementById("sg").value;
@@ -385,7 +387,7 @@ var sf=document.getElementById("sf").value.trim()||"未提供",to=document.getEl
 var ms=gmd();var tp=0,mc=0;ms.forEach(function(m){if(m.pct>0){tp+=m.pct;mc++}});var ap=mc>0?Math.round(tp/mc):0;
 var wk=ms.filter(function(m){return m.pct>0&&m.pct<50}),md=ms.filter(function(m){return m.pct>=50&&m.pct<75}),st=ms.filter(function(m){return m.pct>=75});
 var sr=ms.slice().sort(function(a,b){return a.pct-b.pct});
-var ca=gcd();var td=new Date();var ds=td.getFullYear()+'-'+(td.getMonth()+1).toString().padStart(2,'0')+'-'+td.getDate().toString().padStart(2,'0');
+var ca={a:25,b:25,c:25,d:25};var td=new Date();var ds=td.getFullYear()+'-'+(td.getMonth()+1).toString().padStart(2,'0')+'-'+td.getDate().toString().padStart(2,'0');
 var r='';r+='='.repeat(64)+'\n   AI 数 学 诊 断 报 告\n'+'='.repeat(64)+'\n\n';
 r+='学生: '+n+' | 年级: '+g+' | 诊断日期: '+ds+'\n当前水平: '+cs+' | 目标: '+ts+'\n教师观察: '+to+'\n家长需求: '+pr+'\n学生自述: '+sf+'\n\n';
 r+='一、学情总评\n'+'-'.repeat(40)+'\n';
@@ -410,8 +412,8 @@ r+='\n';
 });
 r+='三、失分原因分布\n'+'-'.repeat(40)+'\n\n';
 var sc=Object.keys(ca).sort(function(a,b){return(ca[b]||0)-(ca[a]||0)});
-sc.forEach(function(cid){var cl=CA.find(function(c){return c.id===cid});if(cl)r+='  '+cl.label+': '+(ca[cid]||0)+'%\n'});
-r+='\n主导失分因素: ';var tc=sc[0],tcl=CA.find(function(c){return c.id===tc});if(tcl)r+=tcl.label+'('+ca[tc]+'%)';
+Object.keys(ca).sort(function(a,b){return(ca[b]||0)-(ca[a]||0)}).forEach(function(cid){var labels={a:"概念理解不清",b:"计算能力不足",c:"解题方法缺失",d:"审题与考试策略"};r+="  "+(labels[cid]||cid)+": "+(ca[cid]||0)+"%\n";});
+r+='\n主导失分因素: ';var tc=Object.keys(ca).sort(function(a,b){return(ca[b]||0)-(ca[a]||0)})[0];var labels2={a:'概念理解不清',b:'计算能力不足',c:'解题方法缺失',d:'审题与考试策略'};r+=(labels2[tc]||tc)+'('+ca[tc]+'%)';
 r+='\n\n';
 r+='四、提分路径规划\n'+'-'.repeat(40)+'\n\n从'+cs+'到'+ts+', 建议分阶段推进:\n\n';
 var p1=wk.length>0?wk[0].name:(md.length>0?md[0].name:'综合提升'),p2=wk.length>1?wk[1].name:(md.length>1?md[1].name:'综合训练');
@@ -430,7 +432,7 @@ r+='【每周学习建议】\n  周一至周五: 每天30-40分钟专项训练\n
 r+='【错题本使用方法】\n  1. 记录: 题目+错误答案+正确答案+错误原因+正确思路\n  2. 按知识点分类整理\n  3. 每周末重做本周错题, 连续做对3次标记"已掌握"\n  4. 考前只看"未掌握"的错题\n\n';
 r+='六、预期目标\n'+'-'.repeat(40)+'\n\n  短期(1个月): 薄弱子知识点正确率提升至65%+, 总分提升10-20分\n  中期(3个月): 各子知识点正确率均达到70%+, 总分接近目标\n  长期(6个月): 稳定在目标分数之上\n\n';
 r+='七、给家长的建议\n'+'-'.repeat(40)+'\n\n  1. 关注过程而非分数: 子知识点正确率变化更重要\n  2. 配合老师: 完成每日专项练习\n  3. 营造环境: 帮助建立稳定学习节奏\n  4. 合理期望: 提分需要8-12周\n  5. 关注心理: 多肯定孩子的进步\n\n';
-r+='='.repeat(64)+'\n  由 数学诊断工作台 生成 | '+g+'年级专属\n  \n'+'='.repeat(64);
+r+='='.repeat(64)+'\n  由 九章 生成 | '+g+'年级专属\n  \n'+'='.repeat(64);
 document.getElementById("rc").textContent=r;
 var cls="d";if(ap>=85)cls="s";else if(ap>=65)cls="w";
 document.getElementById("rsm").innerHTML=
@@ -480,6 +482,63 @@ if(planId){setTimeout(function(){
 // ==== 课程规划功能 ====
 var planEditId = null;
 
+var MODULE_CONTENT = {
+  "有理数运算":"有理数加减乘除/乘方科学记数法/绝对值/混合运算",
+  "整式":"整式加减/去括号化简/整式化简求值",
+  "一元一次方程":"方程解法/行程问题/工程与销售问题",
+  "二元一次方程组":"代入消元/加减消元/方程组应用",
+  "不等式与不等式组":"不等式性质/一元一次不等式/不等式组",
+  "几何初步":"线段与角/相交线/平行线判定与性质",
+  "实数与坐标系":"实数概念/平方根/坐标系",
+  "三角形":"边角关系/全等判定/全等证明/等腰三角形",
+  "整式乘除与因式分解":"整式乘法/乘法公式/提公因式/公式法",
+  "分式":"分式运算/分式方程/分式应用",
+  "二次根式":"根式性质/根式化简/根式运算",
+  "一次函数与反比例函数":"函数图像性质/一次函数应用/反比例函数",
+  "四边形与勾股定理":"平行四边形/矩形菱形/勾股定理",
+  "数据分析":"方差标准差/数据波动/统计推断",
+  "一元二次方程":"方程解法/判别式/韦达定理/应用",
+  "二次函数":"图像性质/解析式求法/方程关系/应用",
+  "旋转与圆":"旋转对称/圆的性质/圆周角/切线",
+  "相似三角形":"比例线段/相似判定/相似性质/应用",
+  "锐角三角函数":"三角函数概念/特殊角值/解直角三角形/应用",
+  "概率初步":"事件概率/列举法/频率概率",
+  "集合与逻辑":"集合运算/命题量词/充要条件",
+  "一元二次函数与不等式":"二次不等式/三个二次关系/含参不等式",
+  "函数概念与性质":"函数表示/单调性/奇偶性/图像",
+  "指数与对数函数":"指数运算/对数运算/幂函数",
+  "三角函数":"任意角弧度/三角函数定义/诱导公式/恒等变换",
+  "平面向量":"向量运算/坐标表示/数量积/应用",
+  "立体几何初步":"空间几何体/点线面位置",
+  "数列":"等差数列/等比数列/数列求和/综合",
+  "不等式":"一元二次不等式/基本不等式/线性规划/证明",
+  "空间向量与立体几何":"向量运算/空间角距离/位置证明",
+  "解析几何":"直线与方程/圆与方程/椭圆/双曲线抛物线",
+  "导数及其应用":"导数概念/单调性/极值/综合应用",
+  "计数原理":"分步分类计数/排列组合/二项式定理",
+  "随机变量与统计":"离散型随机变量/期望方差/正态分布/案例",
+  "函数与导数综合":"函数性质/导数切线极值/零点/压轴题",
+  "三角函数与解三角形":"恒等变换/图像变换/解三角形/综合",
+  "数列与不等式综合":"通项求和/综合/不等式证明/综合",
+  "立体几何综合":"位置证明/向量法/角距离计算",
+  "解析几何综合":"圆锥曲线性质/直线与曲线/弦长面积/定点定值",
+  "概率统计与计数":"排列组合/概率分布/统计案例/综合"
+};
+var MODULE_MATERIAL = {
+  "初一":"七年级教材+配套练习册+计算专项",
+  "初二":"八年级教材+几何专项+函数初步",
+  "初三":"中考总复习资料+近三年真题+压轴题精选",
+  "高一":"必修一/二教材+同步练习+章节测试卷",
+  "高二":"选择性必修教材+专项训练+高考真题分类",
+  "高三":"高考真题汇编+模拟卷+押题卷+错题本"
+};
+
+function getModuleContent(name, grade){
+  var topics = MODULE_CONTENT[name] || "知识点梳理+题型训练+错题重做";
+  var baseMat = MODULE_MATERIAL[grade] || "教材+练习册+真题";
+  return { topics: topics, material: baseMat };
+}
+
 function generateCoursePlan(){
   var ms = gmd();
   var name = document.getElementById("sn").value.trim() || "学生";
@@ -509,11 +568,19 @@ function generateCoursePlan(){
     wi++;
     h += '<div class="cal-week"><div class="cal-wh">第' + wi + '周（约' + w.th + '课时）</div>';
     w.items.forEach(function(p){
+      var mc = getModuleContent(p.name, grade);
       h += '<div class="cal-row"><span class="cal-mn">' + p.name + '</span>';
-      h += '<span class="cal-p">当前' + p.pct + '%→</span>';
-      h += '<input type="number" class="cal-hr" value="' + p.hours + '" min="1" max="10" data-name="' + p.name + '">';
+      h += '<span class="cal-p">' + p.pct + '%→</span>';
+      h += '<input type="number" class="cal-hr" value="' + p.hours + '" min="1" max="10" data-name="' + p.name + '" style="width:44px">';
       h += '<span class="cal-lbl">课时</span>';
-      h += '<input type="text" class="cal-focus" value="重点突破核心题型" placeholder="教学重点">';
+      h += '</div>';
+      h += '<div class="cal-row" style="padding-left:88px;padding-top:0;gap:4px">';
+      h += '<span style="font-size:11px;color:#888;white-space:nowrap">教学内容:</span>';
+      h += '<input type="text" class="cal-focus" value="' + mc.topics + '" style="flex:1;min-width:100px;font-size:11px;padding:3px 6px;border:1px solid #d0d4da;border-radius:4px">';
+      h += '</div>';
+      h += '<div class="cal-row" style="padding-left:88px;padding-top:0;gap:4px">';
+      h += '<span style="font-size:11px;color:#888;white-space:nowrap">教辅材料:</span>';
+      h += '<input type="text" class="cal-mat" value="' + mc.material + '" style="flex:1;min-width:100px;font-size:11px;padding:3px 6px;border:1px solid #d0d4da;border-radius:4px">';
       h += '</div>';
     });
     h += '</div>';
@@ -527,24 +594,96 @@ function generateCoursePlan(){
   document.getElementById("coursePlanSection").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
+function exportPlanPdf(){
+  var weeks = [];
+  document.querySelectorAll(".cal-week").forEach(function(ww){
+    var items = [];
+    var allFoci = ww.querySelectorAll(".cal-focus");
+    var allMats = ww.querySelectorAll(".cal-mat");
+    var fi = 0, mi = 0;
+    ww.querySelectorAll(".cal-row").forEach(function(row){
+      var mn = row.querySelector(".cal-mn");
+      var hr = row.querySelector(".cal-hr");
+      if (mn && hr) {
+        items.push({
+          name: mn.textContent,
+          hours: hr.value,
+          focus: allFoci[fi] ? allFoci[fi].value : "",
+          material: allMats[mi] ? allMats[mi].value : ""
+        });
+        fi++; mi++;
+      }
+    });
+    weeks.push(items);
+  });
+if (!weeks.length || !weeks[0].length) { showT("请先生成课程规划"); return; }
+
+  var name = document.getElementById("sn").value.trim() || "学生";
+  var grade = document.getElementById("sg").value;
+  var totalH = 0;
+  weeks.forEach(function(w){ w.forEach(function(i){ totalH += parseInt(i.hours)||0; }); });
+
+  var h = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>课程规划 - 九章</title>';
+  h += '<style>@page{margin:15mm 20mm}body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:#1a1a2e;padding:20px;line-height:1.7}';
+  h += 'h1{font-size:22px;color:#e8912e;border-bottom:3px solid #e8912e;padding-bottom:8px}';
+  h += 'h2{font-size:16px;margin-top:20px;color:#1a1a2e;border-left:4px solid #27ae60;padding-left:10px}';
+  h += 'table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}';
+  h += 'th{background:#f4f5f7;padding:8px 10px;text-align:left;border-bottom:2px solid #ddd;font-size:12px}';
+  h += 'td{padding:8px 10px;border-bottom:1px solid #eee}';
+  h += '.print-btn{text-align:center;margin-bottom:20px}';
+  h += '.print-btn button{padding:10px 30px;font-size:14px;font-weight:600;border:none;border-radius:8px;cursor:pointer;background:#e8912e;color:#fff}';
+  h += '.info{font-size:13px;color:#555;margin:4px 0}';
+  h += '@media print{.print-btn{display:none}}';
+  h += '</style></head><body>';
+  h += '<div class="print-btn"><button onclick="window.print()">保存为PDF</button></div>';
+  h += '<h1>' + name + '（' + grade + '）课程规划</h1>';
+  h += '<div class="info">总课时: ' + totalH + ' | 周数: ' + weeks.length + ' | 生成日期: ' + new Date().toLocaleDateString("zh-CN") + '</div>';
+
+  weeks.forEach(function(w, wi){
+    h += '<h2>第' + (wi+1) + '周</h2>';
+    h += '<table><tr><th style="width:80px">模块</th><th>课时</th><th>教学内容</th><th>教辅材料</th></tr>';
+    w.forEach(function(item){
+      h += '<tr><td><b>' + item.name + '</b></td><td>' + item.hours + '</td><td>' + (item.focus||'') + '</td><td>' + (item.material||'') + '</td></tr>';
+    });
+    h += '</table>';
+  });
+
+  h += '<div style="margin-top:30px;font-size:11px;color:#aaa;text-align:center">由 九章 AI数学诊断工作台 生成</div>';
+  h += '</body></html>';
+
+  var w = window.open("", "_blank");
+  w.document.write(h);
+  w.document.close();
+}
+
 function saveCoursePlan(){
   var name = document.getElementById("sn").value.trim() || "学生";
   var grade = document.getElementById("sg").value;
   var rows = document.querySelectorAll(".cal-row");
   if (!rows.length) { showT("请先生成课程规划"); return; }
-  var weeks = []; var ci = 0; var curWk = [];
+    var weeks = [];
   document.querySelectorAll(".cal-week").forEach(function(ww){
     var items = [];
+    var allFoci = ww.querySelectorAll(".cal-focus");
+    var allMats = ww.querySelectorAll(".cal-mat");
+    var fi = 0, mi = 0;
     ww.querySelectorAll(".cal-row").forEach(function(row){
-      items.push({
-        name: row.querySelector(".cal-mn").textContent,
-        hours: parseInt(row.querySelector(".cal-hr").value) || 2,
-        focus: row.querySelector(".cal-focus").value
-      });
+      var mn = row.querySelector(".cal-mn");
+      var hr = row.querySelector(".cal-hr");
+      if (mn && hr) {
+        items.push({
+          name: mn.textContent,
+          hours: parseInt(hr.value) || 2,
+          focus: allFoci[fi] ? allFoci[fi].value : "",
+          material: allMats[mi] ? allMats[mi].value : ""
+        });
+        fi++; mi++;
+      }
     });
     if (items.length) { weeks.push({items:items, th:items.reduce(function(s,i){return s+i.hours},0)}); }
   });
-  var totalH = weeks.reduce(function(s,w){return s+w.th},0);
+  var totalH
+var totalH = weeks.reduce(function(s,w){return s+w.th},0);
   var data = {student_name:name, grade:grade, total_hours:totalH, weeks_count:weeks.length, plan_data:{weeks:weeks}};
 
   var cpUrl = planEditId ? ("/api/courseplan/" + planEditId) : "/api/courseplan";
@@ -596,28 +735,24 @@ function getStructuredData(){
 
 function saveData(){
   var data = getStructuredData();
-  if (!data.modules || !data.modules.length) { showT("请先填写诊断数据"); return; }
-  fetch("/api/diagnosis", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)})
+  if (!data.modules || !data.modules.length) { showT("请先填写诊断数据"); return Promise.reject(); }
+  return fetch("/api/diagnosis", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)})
   .then(function(r){ return r.json(); }).then(function(d){
-    if (d.success) { showT("诊断报告已保存! ID:" + d.id); }
-    else { showT("保存失败: " + d.error); }
-  }).catch(function(){ showT("保存失败"); });
+    if (d.success) { showT("诊断报告已保存! ID:" + d.id); return d.id; }
+    else { showT("保存失败: " + d.error); return Promise.reject(); }
+  }).catch(function(e){ showT("保存失败: 网络错误"); return Promise.reject(); });
 }
 
 // ==== PDF导出 ====
 function exportPdf(){
-  var id = prompt("请输入诊断报告ID（留空则新建）:", "");
-  if (id === null) return;
-  if (id && id.trim()) {
-    window.open("/report.html?id=" + id.trim(), "_blank");
-  } else {
-    var content = document.getElementById("rc").textContent;
-    var w = window.open("", "_blank");
-    w.document.write("<!DOCTYPE html><html><head><meta charset='utf-8'><title>数学诊断报告</title>");
-    w.document.write("<style>body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;padding:40px;line-height:1.8;color:#1a1a2e}pre{white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.8}.print-btn{text-align:center;margin-bottom:20px}.print-btn button{padding:10px 30px;font-size:14px;font-weight:600;border:none;border-radius:8px;cursor:pointer;background:#e8912e;color:#fff}@media print{.print-btn{display:none}}</style></head><body>");
-    w.document.write("<div class='print-btn'><button onclick='window.print()'>保存为PDF</button></div><pre>" + content + "</pre></body></html>");
-    w.document.close();
-  }
+  var content = document.getElementById("rc").textContent;
+  if (!content || content.indexOf("=====") < 0) { showT("请先生成诊断报告"); return; }
+  var data = getStructuredData();
+  if (!data.modules || !data.modules.length) { showT("请先填写诊断数据"); return; }
+  showT("正在保存诊断并生成PDF...");
+  saveData().then(function(id){
+    if (id) { window.open("/report.html?id=" + id, "_blank"); }
+  }).catch(function(){ });
 }
 
 // ==== 路线图 ====
@@ -632,23 +767,23 @@ function generateRoadmap(){
   var ap = Math.round(active.reduce(function(s,m){return s+m.pct},0) / active.length);
   
   var r = "";
-  r += "📊 " + name + "（" + grade + "）提分路线图\n";
+  r += "🎯 " + name + "（" + grade + "）提分路线图\n";
   r += "当前平均正确率: " + ap + "%\n\n";
-  r += "📌 紧急突破（正确率<50%）\n";
+  r += "🔴 紧急突破（正确率<50%）\n";
   active.filter(function(m){return m.pct < 50}).forEach(function(m){
-    r += "  🔴 " + m.name + " (" + m.pct + "%)\n";
+    r += "  ⚠️ " + m.name + " (" + m.pct + "%)\n";
   });
-  r += "\n📌 重点巩固（正确率50%-75%）\n";
+  r += "\n🟡 重点巩固（正确率50%-75%）\n";
   active.filter(function(m){return m.pct >= 50 && m.pct < 75}).forEach(function(m){
-    r += "  🟡 " + m.name + " (" + m.pct + "%)\n";
+    r += "  ⚠️ " + m.name + " (" + m.pct + "%)\n";
   });
-  r += "\n📌 保持提升（正确率>=75%）\n";
+  r += "\n🟢 保持提升（正确率>=75%）\n";
   active.filter(function(m){return m.pct >= 75}).forEach(function(m){
-    r += "  🟢 " + m.name + " (" + m.pct + "%)\n";
+    r += "  ⚠️ " + m.name + " (" + m.pct + "%)\n";
   });
   
   var weakCount = active.filter(function(m){return m.pct < 65}).length;
-  r += "\n⏱ 建议\n";
+  r += "\n💡 建议\n";
   r += "  每周" + Math.max(4, weakCount * 2) + "课时，持续" + Math.max(4, weakCount) + "周\n";
   r += "  优先突破" + active[0].name + "和" + (active[1] ? active[1].name : active[0].name) + "\n";
   
@@ -665,19 +800,48 @@ function generateBrief(){
   
   var weakest = active.slice().sort(function(a,b){ return a.pct - b.pct; })[0];
   var r = "📋 " + name + " 课后简报\n\n";
-  r += "✅ 当前最佳: " + active.slice().sort(function(a,b){return b.pct-a.pct})[0].name + " (" + Math.max.apply(null, active.map(function(m){return m.pct})) + "%)\n";
-  r += "❌ 最需加强: " + weakest.name + " (" + weakest.pct + "%)\n\n";
+  r += "🏆 当前最佳: " + active.slice().sort(function(a,b){return b.pct-a.pct})[0].name + " (" + Math.max.apply(null, active.map(function(m){return m.pct})) + "%)\n";
+  r += "🎯 最需加强: " + weakest.name + " (" + weakest.pct + "%)\n\n";
   r += "📝 今日作业\n";
   r += "  1. " + weakest.name + " 专项练习3道\n";
   r += "  2. 错题本整理本周错题\n";
   r += "  3. 限时训练（如有余力）\n\n";
-  r += "💡 下次课重点: " + weakest.name;
+  r += "🔑 下次课重点: " + weakest.name;
   
   document.getElementById("rc").textContent = r;
   showT("简报已生成");
 }
 
+
+// ==== 标签切换 ====
+function switchTab(tab){
+  document.querySelectorAll('.nav-bar a[data-tab]').forEach(function(a){ a.classList.remove('active'); a.style.background=''; a.style.color='#5a5a72'; });
+document.querySelectorAll('#tab-diagnosis,#tab-plan').forEach(function(el){ el.style.display='none'; });
+  var tabEl = document.getElementById('tab-' + tab);
+  if (tabEl) tabEl.style.display = 'block';
+  var navLink = document.querySelector('.nav-bar a[data-tab="' + tab + '"]');
+  if (navLink) { navLink.classList.add('active'); navLink.style.background='#e8912e'; navLink.style.color='#fff'; }
+
+}
 onGradeChange();
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

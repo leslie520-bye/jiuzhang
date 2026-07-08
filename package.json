@@ -1,7 +1,7 @@
-{
+﻿{
   "name": "ai-math-diagnosis-server",
   "version": "1.0.0",
-  "description": "AI数学诊断工作台 - 云端版",
+  "description": "AI数学诊断工作台 - 九章",
   "main": "api/index.js",
   "scripts": {
     "start": "node server.js"
