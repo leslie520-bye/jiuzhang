@@ -1,88 +1,8 @@
-﻿// Database - use in-memory storage (simple, works everywhere)
-let dbData = { diagnoses: [], modules: [], subtopics: [], courses: [], nextId: 1 };
-let db = {
-  initDB: async()=>{}, isReady:true,
-  
-  saveDiagnosis: function(data) {
-    var id = dbData.nextId++;
-    var avg = (data.modules||[]).length ? Math.round(data.modules.reduce(function(s,m){return s+(m.module_avg||0)},0)/data.modules.length) : 0;
-    var diag = { id:id, student_name:data.student_name||'', grade:data.grade||'', current_score:data.current_score||'', target_score:data.target_score||'', teacher_observation:data.teacher_observation||'', parent_requirement:data.parent_requirement||'', student_feedback:data.student_feedback||'', avg_percentage:avg, exam_scores:JSON.stringify(data.exam_scores||[]), cause_data:JSON.stringify(data.cause_data||{}), full_report:data.full_report||'', created_at:new Date().toISOString() };
-    dbData.diagnoses.push(diag);
-    if (data.modules) data.modules.forEach(function(m) {
-      var mr = { id:dbData.nextId++, diagnosis_id:id, module_name:m.module_name||'', module_avg:m.module_avg||0, error_types:JSON.stringify(m.error_types||[]) };
-      dbData.modules.push(mr);
-      if (m.subtopics) m.subtopics.forEach(function(s) {
-        dbData.subtopics.push({ id:dbData.nextId++, module_result_id:mr.id, subtopic_name:s.name||'', percentage:s.pct||0 });
-      });
-    });
-    return id;
-  },
-  
-  listDiagnoses: function(sn) {
-    var list = dbData.diagnoses.filter(function(d) { return !sn || d.student_name.indexOf(sn) >= 0; });
-    return list.map(function(d) { return { id:d.id, student_name:d.student_name, grade:d.grade, avg_percentage:d.avg_percentage, created_at:d.created_at, current_score:d.current_score, target_score:d.target_score }; });
-  },
-  
-  getDiagnosis: function(id) {
-    var d = dbData.diagnoses.find(function(x) { return x.id === id; });
-    if (!d) return null;
-    var result = Object.assign({}, d);
-    result.modules = dbData.modules.filter(function(m) { return m.diagnosis_id === id; }).map(function(m) {
-      var mr = Object.assign({}, m);
-      mr.subtopics = dbData.subtopics.filter(function(s) { return s.module_result_id === mr.id; }).map(function(s) { return Object.assign({}, s); });
-      try { mr.error_types = JSON.parse(mr.error_types); } catch(e) {}
-      return mr;
-    });
-    try { result.exam_scores = JSON.parse(result.exam_scores); } catch(e) {}
-    try { result.cause_data = JSON.parse(result.cause_data); } catch(e) {}
-    return result;
-  },
-  
-  listStudents: function() {
-    var names = [];
-    dbData.diagnoses.forEach(function(d) { if (names.indexOf(d.student_name) < 0 && d.student_name) names.push(d.student_name); });
-    return names.map(function(n) { return { student_name:n }; });
-  },
-  
-  deleteDiagnosis: function(id) {
-    dbData.diagnoses = dbData.diagnoses.filter(function(d) { return d.id !== id; });
-    dbData.modules = dbData.modules.filter(function(m) { return m.diagnosis_id !== id; });
-  },
-  
-  getStudentTrend: function(sn) {
-    return dbData.diagnoses.filter(function(d) { return d.student_name === sn; }).map(function(d) {
-      var result = { id:d.id, student_name:d.student_name, grade:d.grade, avg_percentage:d.avg_percentage, created_at:d.created_at, current_score:d.current_score, target_score:d.target_score };
-      result.modules = dbData.modules.filter(function(m) { return m.diagnosis_id === d.id; });
-      return result;
-    });
-  },
-  
-  saveCoursePlan: function(data) {
-    var id = dbData.nextId++;
-    dbData.courses.push({ id:id, diagnosis_id:data.diagnosis_id||0, student_name:data.student_name, grade:data.grade, total_hours:data.total_hours||0, weeks_count:data.weeks_count||0, plan_data:JSON.stringify(data.plan_data||{}), created_at:new Date().toISOString() });
-    return id;
-  },
-  
-  listCoursePlans: function(sn) {
-    var list = dbData.courses.filter(function(c) { return !sn || c.student_name.indexOf(sn) >= 0; });
-    return list.map(function(c) { return { id:c.id, student_name:c.student_name, grade:c.grade, total_hours:c.total_hours, weeks_count:c.weeks_count, created_at:c.created_at }; });
-  },
-  
-  getCoursePlan: function(id) {
-    var c = dbData.courses.find(function(x) { return x.id === id; });
-    if (!c) return null;
-    var result = Object.assign({}, c);
-    try { result.plan_data = JSON.parse(result.plan_data); } catch(e) {}
-    return result;
-  },
-  
-  deleteCoursePlan: function(id) { dbData.courses = dbData.courses.filter(function(c) { return c.id !== id; }); },
-  
-  updateCoursePlan: function(id, data) {
-    var c = dbData.courses.find(function(x) { return x.id === id; });
-    if (c) { c.total_hours = data.total_hours||0; c.weeks_count = data.weeks_count||0; c.plan_data = JSON.stringify(data.plan_data||{}); }
-  }
-};const app = express();
+﻿const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
+const app = express();
 app.use(cors());
 app.use(express.json({limit:'50mb'}));
 app.use(express.static(path.join(__dirname, '..', 'public')));
@@ -282,4 +202,5 @@ app.post('/api/payment/notify', (req, res) => {
 app.use('/uploads', express.static(UPLOAD_DIR));
 
 module.exports = app;
+
 
