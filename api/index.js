@@ -2,6 +2,29 @@
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+// In-memory database
+var _dbStore = {diags:[], mods:[], subs:[], courses:[]};
+var db = {
+  initDB: async()=>{}, isReady:true,
+  saveDiagnosis: function(d) {
+    var id = Date.now();
+    var avg = (d.modules||[]).length ? Math.round(d.modules.reduce(function(s,m){return s+(m.module_avg||0)},0)/d.modules.length) : 0;
+    _dbStore.diags.push({id:id,student_name:d.student_name||'',grade:d.grade||'',current_score:d.current_score||'',target_score:d.target_score||'',teacher_observation:d.teacher_observation||'',parent_requirement:d.parent_requirement||'',student_feedback:d.student_feedback||'',avg_percentage:avg,exam_scores:JSON.stringify(d.exam_scores||[]),cause_data:JSON.stringify(d.cause_data||{}),full_report:d.full_report||'',created_at:new Date().toISOString()});
+    if(d.modules) d.modules.forEach(function(m){var mid=id+1+_dbStore.mods.length;_dbStore.mods.push({id:mid,diagnosis_id:id,module_name:m.module_name||'',module_avg:m.module_avg||0,error_types:JSON.stringify(m.error_types||[])});if(m.subtopics)m.subtopics.forEach(function(s){_dbStore.subs.push({id:mid+1+_dbStore.subs.length,module_result_id:mid,subtopic_name:s.name||'',percentage:s.pct||0})});});
+    return id;
+  },
+  listDiagnoses: function(sn){var t=_dbStore.diags;if(sn)t=t.filter(function(d){return d.student_name.indexOf(sn)>=0});return t.map(function(d){return{id:d.id,student_name:d.student_name,grade:d.grade,avg_percentage:d.avg_percentage,created_at:d.created_at,current_score:d.current_score,target_score:d.target_score}});},
+  getDiagnosis: function(id){var d=_dbStore.diags.find(function(x){return x.id===id});if(!d)return null;var r=Object.assign({},d);r.modules=_dbStore.mods.filter(function(m){return m.diagnosis_id===id}).map(function(m){var mr=Object.assign({},m);mr.subtopics=_dbStore.subs.filter(function(s){return s.module_result_id===mr.id});try{mr.error_types=JSON.parse(mr.error_types)}catch(e){}return mr});try{r.exam_scores=JSON.parse(r.exam_scores)}catch(e){}try{r.cause_data=JSON.parse(r.cause_data)}catch(e){}return r;},
+  listStudents: function(){var n=[];_dbStore.diags.forEach(function(d){if(n.indexOf(d.student_name)<0&&d.student_name)n.push(d.student_name)});return n.map(function(x){return{student_name:x}});},
+  deleteDiagnosis: function(id){_dbStore.diags=_dbStore.diags.filter(function(d){return d.id!==id});_dbStore.mods=_dbStore.mods.filter(function(m){return m.diagnosis_id!==id});},
+  getStudentTrend: function(sn){return _dbStore.diags.filter(function(d){return d.student_name===sn}).map(function(d){var r={id:d.id,student_name:d.student_name,grade:d.grade,avg_percentage:d.avg_percentage,created_at:d.created_at,current_score:d.current_score,target_score:d.target_score};r.modules=_dbStore.mods.filter(function(m){return m.diagnosis_id===d.id});return r});},
+  saveCoursePlan: function(d){var id=Date.now()+1;_dbStore.courses.push({id:id,diagnosis_id:d.diagnosis_id||0,student_name:d.student_name,grade:d.grade,total_hours:d.total_hours||0,weeks_count:d.weeks_count||0,plan_data:JSON.stringify(d.plan_data||{}),created_at:new Date().toISOString()});return id;},
+  listCoursePlans: function(sn){var t=_dbStore.courses;if(sn)t=t.filter(function(c){return c.student_name.indexOf(sn)>=0});return t.map(function(c){return{id:c.id,student_name:c.student_name,grade:c.grade,total_hours:c.total_hours,weeks_count:c.weeks_count,created_at:c.created_at}});},
+  getCoursePlan: function(id){var c=_dbStore.courses.find(function(x){return x.id===id});if(!c)return null;var r=Object.assign({},c);try{r.plan_data=JSON.parse(r.plan_data)}catch(e){}return r;},
+  deleteCoursePlan: function(id){_dbStore.courses=_dbStore.courses.filter(function(c){return c.id!==id});},
+  updateCoursePlan: function(id,d){var c=_dbStore.courses.find(function(x){return x.id===id});if(c){c.total_hours=d.total_hours||0;c.weeks_count=d.weeks_count||0;c.plan_data=JSON.stringify(d.plan_data||{})}}
+};
+
 const app = express();
 app.use(cors());
 app.use(express.json({limit:'50mb'}));
