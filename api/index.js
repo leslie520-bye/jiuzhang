@@ -3,18 +3,44 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
-// Database module - Turso first, fallback to local SQLite
+// Database module - check env first, skip Turso if not configured
 let db;
-try {
-  db = require('../database');
-} catch(e) {
-  console.error('Turso failed:', e.message);
+if (process.env.TURSO_URL && process.env.TURSO_URL.length > 10) {
+  try {
+    db = require('../database');
+    console.log('Using Turso database');
+  } catch(e) {
+    console.error('Turso failed:', e.message);
+    db = null;
+  }
+} else {
+  console.log('TURSO_URL not set, using in-memory database');
+  db = null;
+}
+if (!db) {
   try {
     db = require('../database-local');
-    console.log('Fallback to local SQLite');
+    console.log('Using local SQLite database');
   } catch(e2) {
-    db = { initDB: async()=>{}, isReady:true, saveDiagnosis:()=>0, listDiagnoses:()=>[], getDiagnosis:()=>null, listStudents:()=>[], deleteDiagnosis:()=>{}, getStudentTrend:()=>[], saveCoursePlan:()=>0, listCoursePlans:()=>[], getCoursePlan:()=>null, deleteCoursePlan:()=>{}, updateCoursePlan:()=>{} };
+    console.error('Local SQLite also failed:', e2.message);
+    db = null;
   }
+}
+if (!db) {
+  db = {
+    initDB: async()=>{}, isReady:true,
+    saveDiagnosis: function(d) { return Date.now(); },
+    listDiagnoses: function() { return []; },
+    getDiagnosis: function() { return null; },
+    listStudents: function() { return []; },
+    deleteDiagnosis: function() {},
+    getStudentTrend: function() { return []; },
+    saveCoursePlan: function(d) { return Date.now(); },
+    listCoursePlans: function() { return []; },
+    getCoursePlan: function() { return null; },
+    deleteCoursePlan: function() {},
+    updateCoursePlan: function() {}
+  };
 }
 
 const app = express();
@@ -28,23 +54,9 @@ if (!fs.existsSync(UPLOAD_DIR)) try { fs.mkdirSync(UPLOAD_DIR); } catch(e) {}
 app.use(async (req, res, next) => {
   try {
     if (!db.isReady && db.initDB) {
-      try { await db.initDB(); } catch(eInit) {
-        console.error('DB init failed:', eInit.message);
-        // Provide in-memory fallback functions
-        if (!db.saveDiagnosis) db.saveDiagnosis = function(d) { return Date.now(); };
-        if (!db.listDiagnoses) db.listDiagnoses = function() { return []; };
-        if (!db.getDiagnosis) db.getDiagnosis = function() { return null; };
-        if (!db.listStudents) db.listStudents = function() { return []; };
-        if (!db.deleteDiagnosis) db.deleteDiagnosis = function() {};
-        if (!db.getStudentTrend) db.getStudentTrend = function() { return []; };
-        if (!db.saveCoursePlan) db.saveCoursePlan = function(d) { return Date.now(); };
-        if (!db.listCoursePlans) db.listCoursePlans = function() { return []; };
-        if (!db.getCoursePlan) db.getCoursePlan = function() { return null; };
-        if (!db.deleteCoursePlan) db.deleteCoursePlan = function() {};
-        if (!db.updateCoursePlan) db.updateCoursePlan = function() {};
-      }
+      try { await db.initDB(); } catch(e) { console.error('DB init failed:', e.message); }
+      db.isReady = true;
     }
-    db.isReady = true;
     next();
   } catch(e) {
     res.status(500).json({ success: false, error: e.message });
