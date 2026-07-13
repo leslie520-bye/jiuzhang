@@ -1,3 +1,139 @@
+
+// === Payment System ===
+function isPaid() {
+  return localStorage.getItem('jiuzhang_paid') === 'true';
+}
+function markPaid() {
+  localStorage.setItem('jiuzhang_paid', 'true');
+  closePayment();
+}
+function showPayment() {
+  document.getElementById('paymentOverlay').style.display = 'flex';
+}
+function closePayment() {
+  document.getElementById('paymentOverlay').style.display = 'none';
+}
+function startPayment() {
+  var btn = document.getElementById('payNowBtn');
+  btn.textContent = '生成中...';
+  btn.disabled = true;
+  fetch('/api/payment/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: 990 }) })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.mock) {
+        markPaid();
+        showT('支付成功（测试模式）');
+        return;
+      }
+      if (data.qrcode) {
+        document.getElementById('paymentQRInner').innerHTML = '<img src="' + data.qrcode + '" style="width:200px;height:200px"><div style="margin-top:8px;font-size:12px;color:#888">扫码支付 ¥9.90</div>';
+        btn.textContent = '已生成支付码';
+        btn.style.background = '#888';
+        // Poll for payment
+        var poll = setInterval(function() {
+          fetch('/api/payment/check?out_trade_no=' + data.out_trade_no)
+            .then(function(r) { return r.json(); })
+            .then(function(cr) {
+              if (cr.paid) { clearInterval(poll); markPaid(); showT('支付成功！'); }
+            });
+        }, 3000);
+      } else {
+        btn.textContent = '重试';
+        btn.disabled = false;
+        showT('支付创建失败: ' + (data.error || 'unknown'));
+      }
+    })
+    .catch(function(e) { btn.textContent = '重试'; btn.disabled = false; showT('网络错误'); });
+}
+
+// === Paper Upload & Analysis ===
+var uploadedFiles = [];
+function handlePaperDrop(e) {
+  e.preventDefault();
+  handlePaperFiles(e.dataTransfer.files);
+}
+function handlePaperFiles(files) {
+  for (var i = 0; i < files.length; i++) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      uploadedFiles.push({ data: e.target.result, name: 'paper_' + Date.now() });
+      renderPreviews();
+    };
+    reader.readAsDataURL(files[i]);
+  }
+}
+function renderPreviews() {
+  var container = document.getElementById('paperPreview');
+  container.innerHTML = '';
+  uploadedFiles.forEach(function(f, i) {
+    container.innerHTML += '<div style="position:relative;width:80px;height:80px"><img src="' + f.data + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px;border:1px solid #eee"><span onclick="removeFile(' + i + ')" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:#e74c3c;color:#fff;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;">x</span></div>';
+  });
+  document.getElementById('paperUploadArea').style.display = uploadedFiles.length > 0 ? 'none' : '';
+  document.getElementById('paperActions').style.display = uploadedFiles.length > 0 ? 'block' : 'none';
+}
+function removeFile(idx) {
+  uploadedFiles.splice(idx, 1);
+  renderPreviews();
+}
+function clearPaperUpload() {
+  uploadedFiles = [];
+  document.getElementById('paperPreview').innerHTML = '';
+  document.getElementById('paperUploadArea').style.display = '';
+  document.getElementById('paperActions').style.display = 'none';
+  document.getElementById('paperResults').style.display = 'none';
+}
+function runPaperAnalysis() {
+  if (uploadedFiles.length === 0) { showT('请先上传试卷图片'); return; }
+  if (!isPaid()) {
+    showPayment();
+    return;
+  }
+  var btn = document.getElementById('analyzeBtn');
+  btn.textContent = '分析中...';
+  btn.disabled = true;
+  var grade = document.getElementById('sg').value || '高中';
+  // Upload images first
+  fetch('/api/upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ images: uploadedFiles })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(uploadResult) {
+    if (!uploadResult.success) throw new Error(uploadResult.error);
+    // Then analyze
+    return fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: uploadResult.files, grade: grade })
+    });
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(result) {
+    if (!result.success) throw new Error(result.error);
+    displayAnalysisResult(result);
+  })
+  .catch(function(e) {
+    showT('分析失败: ' + e.message);
+  })
+  .finally(function() {
+    btn.textContent = '开始分析';
+    btn.disabled = false;
+  });
+}
+function displayAnalysisResult(result) {
+  var resultsDiv = document.getElementById('paperResults');
+  resultsDiv.style.display = 'block';
+  var summary = document.getElementById('paperSummary');
+  var weakDiv = document.getElementById('paperWeakModules');
+  summary.innerHTML = '<strong>诊断摘要:</strong> ' + (result.summary || '') + '<br><strong>得分:</strong> ' + (result.score || '待确认');
+  if (result.weak_modules && result.weak_modules.length) {
+    var html = '<strong>薄弱模块:</strong><br>';
+    result.weak_modules.forEach(function(m) { html += '<span style="display:inline-block;margin:4px;padding:4px 10px;background:#fef5e7;border-radius:6px;font-size:13px">' + m.name + ': ' + m.avg + '%</span>'; });
+    weakDiv.innerHTML = html;
+  }
+  showT('分析完成！');
+}
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -649,7 +785,25 @@ if (!weeks.length || !weeks[0].length) { showT("请先生成课程规划"); retu
   });
 
   h += '<div style="margin-top:30px;font-size:11px;color:#aaa;text-align:center">由 九章 AI数学诊断工作台 生成</div>';
-  h += '</body></html>';
+  h += '
+<!-- Payment Wall Overlay -->
+<div id="paymentOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999;justify-content:center;align-items:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px;max-width:360px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div style="font-size:36px;margin-bottom:8px;">🔓</div>
+    <h3 style="margin:0 0 4px 0;font-size:18px;">解锁AI诊断</h3>
+    <p style="font-size:13px;color:#888;margin:0 0 20px 0;">支付一次，永久使用所有诊断功能</p>
+    <div id="paymentQRContainer" style="margin:0 auto 20px;width:220px;height:220px;background:#f5f5f7;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+      <div id="paymentQRInner" style="font-size:13px;color:#999;">
+        <div style="font-size:48px;margin-bottom:8px;">📱</div>
+        <div>点击下方按钮生成支付码</div>
+      </div>
+    </div>
+    <button id="payNowBtn" onclick="startPayment()" style="width:100%;padding:14px;background:#e8912e;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:8px;">¥9.90 立即解锁</button>
+    <button onclick="closePayment()" style="width:100%;padding:10px;background:transparent;color:#888;border:1px solid #ddd;border-radius:10px;font-size:14px;cursor:pointer;">暂不支付，使用演示模式</button>
+    <p style="font-size:11px;color:#bbb;margin:12px 0 0 0;">支付宝/微信扫码支付 · 支付后永久有效</p>
+  </div>
+</div>
+</body></html>';
 
   var w = window.open("", "_blank");
   w.document.write(h);
