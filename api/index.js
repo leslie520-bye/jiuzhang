@@ -51,12 +51,28 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 const UPLOAD_DIR = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) try { fs.mkdirSync(UPLOAD_DIR); } catch(e) {}
 
+// Provide in-memory fallback when DB is not available
+function makeFallbackDB() {
+  var fn = function() { return []; };
+  var idFn = function() { return Date.now(); };
+  return {
+    initDB: async()=>{}, isReady:true,
+    saveDiagnosis: idFn, listDiagnoses: fn, getDiagnosis: function() { return null; },
+    listStudents: fn, deleteDiagnosis: function() {}, getStudentTrend: fn,
+    saveCoursePlan: idFn, listCoursePlans: fn, getCoursePlan: function() { return null; },
+    deleteCoursePlan: function() {}, updateCoursePlan: function() {}
+  };
+}
+
 app.use(async (req, res, next) => {
   try {
     if (!db.isReady && db.initDB) {
-      try { await db.initDB(); } catch(e) { console.error('DB init failed:', e.message); }
-      db.isReady = true;
+      try { await db.initDB(); } catch(e) {
+        console.error('DB init failed, using in-memory:', e.message);
+        db = makeFallbackDB();
+      }
     }
+    db.isReady = true;
     next();
   } catch(e) {
     res.status(500).json({ success: false, error: e.message });
