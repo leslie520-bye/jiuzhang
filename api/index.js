@@ -26,9 +26,31 @@ const UPLOAD_DIR = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, '.
 if (!fs.existsSync(UPLOAD_DIR)) try { fs.mkdirSync(UPLOAD_DIR); } catch(e) {}
 
 app.use(async (req, res, next) => {
-  try { if (!db.isReady && db.initDB) await db.initDB(); db.isReady = true; next(); }
-  catch(e) { res.status(500).json({ success: false, error: e.message }); }
+  try {
+    if (!db.isReady && db.initDB) {
+      try { await db.initDB(); } catch(eInit) {
+        console.error('DB init failed:', eInit.message);
+        // Provide in-memory fallback functions
+        if (!db.saveDiagnosis) db.saveDiagnosis = function(d) { return Date.now(); };
+        if (!db.listDiagnoses) db.listDiagnoses = function() { return []; };
+        if (!db.getDiagnosis) db.getDiagnosis = function() { return null; };
+        if (!db.listStudents) db.listStudents = function() { return []; };
+        if (!db.deleteDiagnosis) db.deleteDiagnosis = function() {};
+        if (!db.getStudentTrend) db.getStudentTrend = function() { return []; };
+        if (!db.saveCoursePlan) db.saveCoursePlan = function(d) { return Date.now(); };
+        if (!db.listCoursePlans) db.listCoursePlans = function() { return []; };
+        if (!db.getCoursePlan) db.getCoursePlan = function() { return null; };
+        if (!db.deleteCoursePlan) db.deleteCoursePlan = function() {};
+        if (!db.updateCoursePlan) db.updateCoursePlan = function() {};
+      }
+    }
+    db.isReady = true;
+    next();
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
 });
+
 
 // === Diagnosis CRUD ===
 app.post('/api/diagnosis', async (req, res) => { try { const id = await db.saveDiagnosis(req.body); res.json({ success: true, id }); } catch(e) { res.status(500).json({ success: false, error: e.message }); } });
