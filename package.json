@@ -1,0 +1,15 @@
+{
+  "name": "ai-math-diagnosis-server",
+  "version": "1.0.0",
+  "description": "AI数学诊断工作台 - 九章",
+  "main": "api/index.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "multer": "^2.2.0",
+    "sql.js": "^1.14.1"
+  }
+}

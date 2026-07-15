@@ -1,0 +1,155 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#1a1a2e">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>九章 · 诊断历史</title>
+<link rel="stylesheet" href="/styles.css">
+<style>
+.hist-tabs{display:flex;gap:4px;background:#f4f5f7;border-radius:8px;padding:3px;margin-bottom:16px}
+.hist-tab{padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;color:#5a5a72;border:none;background:transparent;transition:all .15s}
+.hist-tab:hover{background:#e8e8ec}
+.hist-tab.active{background:#fff;color:#1a1a2e;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+</style>
+</head>
+<body>
+<div class="container">
+<header><h1><span>九章</span> 诊断历史</h1><div class="sub">九章 · AI数学诊断工作台</div></header>
+<div class="nav"><a href="/">诊断</a><a href="/history.html" class="active">历史记录</a></div>
+
+<div class="hist-tabs">
+<button class="hist-tab active" id="tabDiag" onclick="switchTab('diagnosis')">诊断记录</button>
+<button class="hist-tab" id="tabPlan" onclick="switchTab('plans')">课程规划</button>
+</div>
+
+<div id="diagnosisTab">
+<div class="card">
+<h2>搜索与筛选</h2>
+<div class="flex" style="gap:12px">
+<input type="text" id="searchInput" placeholder="输入学生姓名搜索..." style="flex:1;padding:8px 12px;border:1.5px solid #ddd;border-radius:6px;font-size:14px" onkeyup="loadData(this.value)">
+<button class="btn btn-outline btn-sm" onclick="loadData()">刷新</button>
+</div>
+</div>
+<div class="card" id="statsCard" style="display:none"><h2>统计概览</h2><div class="rsm" id="statsGrid"></div></div>
+<div class="card"><h2>诊断记录 <span class="badge" id="recCount">0条</span></h2><div id="historyTable"><div class="empty">加载中...</div></div></div>
+<div class="card" id="detailCard" style="display:none"><h2>诊断详情 <span id="detailTitle" style="font-weight:400;font-size:14px"></span></h2>
+<div id="detailContent" style="font-size:13px;line-height:1.8;background:#f9f9fb;padding:16px;border-radius:8px;border:1px solid #eee;white-space:pre-wrap;max-height:500px;overflow-y:auto"></div>
+<div class="btn-group" style="margin-top:12px"><button class="btn btn-danger btn-sm" onclick="deleteCurrent()">删除此记录</button><button class="btn btn-outline btn-sm" onclick="document.getElementById('detailCard').style.display='none'">关闭</button></div>
+</div>
+</div>
+
+<div id="plansTab" style="display:none">
+<div class="card"><h2>课程规划 <span class="badge" id="planCount">0条</span></h2>
+<div class="flex" style="gap:8px;margin-bottom:12px">
+<input type="text" id="planSearch" placeholder="搜索学生..." style="flex:1;padding:8px 12px;border:1.5px solid #ddd;border-radius:6px;font-size:14px" onkeyup="loadPlans(this.value)">
+<button class="btn btn-outline btn-sm" onclick="loadPlans()">刷新</button>
+</div>
+<div id="plansContent"><div class="empty">加载中...</div></div>
+</div>
+<div class="card" id="planDetailCard" style="display:none"><h2>课程规划详情 <span id="planDetailTitle" style="font-weight:400;font-size:14px"></span></h2><div id="planDetailContent"></div>
+<div class="btn-group" style="margin-top:12px">
+<button class="btn btn-danger btn-sm" onclick="deletePlan(currentPlanId)">删除</button>
+<button class="btn btn-outline btn-sm" onclick="document.getElementById('planDetailCard').style.display='none'">关闭</button>
+</div>
+</div>
+</div>
+
+</div>
+<div class="ts" id="toast"></div>
+<script>
+var allData=[];var currentId=null;var planData=[];var currentPlanId=null;
+
+// Tab switching
+function switchTab(tab){
+  document.getElementById('diagnosisTab').style.display=tab==='diagnosis'?'block':'none';
+  document.getElementById('plansTab').style.display=tab==='plans'?'block':'none';
+  document.querySelectorAll('.hist-tab').forEach(function(t){t.classList.remove('active')});
+  document.getElementById(tab==='diagnosis'?'tabDiag':'tabPlan').classList.add('active');
+  if(tab==='plans')loadPlans();
+}
+
+// Diagnosis functions
+async function loadData(q){
+  const url=q?'/api/diagnosis?student='+encodeURIComponent(q):'/api/diagnosis';
+  try{const r=await fetch(url);const d=await r.json();if(!d.success){showT('加载失败');return}allData=d.data||[];renderTable(allData)}
+  catch(e){document.getElementById('historyTable').innerHTML='<div class="empty">加载失败</div>'}
+}
+function renderTable(data){
+  document.getElementById('recCount').textContent=data.length+'条';
+  if(!data.length){document.getElementById('historyTable').innerHTML='<div class="empty">暂无诊断记录</div>';return}
+  var h='<table><tr><th>学生</th><th>年级</th><th>平均正确率</th><th>当前分数</th><th>诊断日期</th><th>操作</th></tr>';
+  data.forEach(function(d){
+    var ap=d.avg_percentage;var cls=ap>=85?'gt g7':ap>=65?'gt g9':ap>=40?'gt g10':'gt g12';
+    h+='<tr><td><b>'+esc(d.student_name)+'</b></td><td><span class="'+gc(d.grade)+'">'+d.grade+'</span></td><td><span class="'+cls+'">'+(ap||'--')+'%</span></td><td>'+esc(d.current_score||'--')+'</td><td style="font-size:12px;color:#888">'+d.created_at+'</td><td><button class="btn btn-sm btn-outline" onclick="showDetail('+d.id+')">查看</button></td></tr>';
+  });
+  h+='</table>';document.getElementById('historyTable').innerHTML=h;updateStats(data);
+}
+function updateStats(data){
+  if(!data.length){document.getElementById('statsCard').style.display='none';return}
+  document.getElementById('statsCard').style.display='block';
+  var ss=new Set(data.map(function(d){return d.student_name}));
+  var avg=data.reduce(function(s,d){return s+(d.avg_percentage||0)},0)/data.length;
+  document.getElementById('statsGrid').innerHTML='<div class="sb"><div class="n">'+ss.size+'</div><div class="l">学生人数</div></div><div class="sb"><div class="n">'+data.length+'</div><div class="l">诊断次数</div></div><div class="sb"><div class="n '+(avg>=65?'s':'w')+'">'+Math.round(avg)+'%</div><div class="l">平均正确率</div></div><div class="sb"><div class="n">--</div><div class="l">--</div></div>';
+}
+async function showDetail(id){
+  currentId=id;
+  try{const r=await fetch('/api/diagnosis/'+id);const d=await r.json();if(!d.success||!d.data){showT('加载失败');return}
+  const diag=d.data;document.getElementById('detailTitle').textContent='- '+diag.student_name+' ('+diag.grade+')';
+  var cnt='=== 九章诊断报告 ===\n\n学生: '+diag.student_name+' | 年级: '+diag.grade+'\n诊断日期: '+diag.created_at+'\n当前分数: '+(diag.current_score||'--')+' | 目标: '+(diag.target_score||'--')+'\n平均正确率: '+(diag.avg_percentage||0)+'%\n\n';
+  if(diag.modules&&diag.modules.length){cnt+='=== 模块诊断 ===\n';diag.modules.forEach(function(m){cnt+='  '+m.module_name+': 平均'+m.module_avg+'%\n';if(m.subtopics&&m.subtopics.length){m.subtopics.forEach(function(s){cnt+='    '+s.subtopic_name+': '+s.percentage+'%\n'})}if(m.error_types&&m.error_types.length)cnt+='    错误类型: '+m.error_types.join(', ')+'\n'})}
+  if(diag.teacher_observation)cnt+='\n教师观察: '+diag.teacher_observation+'\n';if(diag.parent_requirement)cnt+='家长需求: '+diag.parent_requirement+'\n';if(diag.student_feedback)cnt+='学生自述: '+diag.student_feedback+'\n';
+  document.getElementById('detailContent').textContent=cnt;document.getElementById('detailCard').style.display='block'}
+  catch(e){showT('加载失败')}
+}
+async function deleteCurrent(){if(!currentId||!confirm('确定删除?'))return;try{const r=await fetch('/api/diagnosis/'+currentId,{method:'DELETE'});const d=await r.json();if(d.success){showT('已删除');document.getElementById('detailCard').style.display='none';loadData()}else showT('删除失败')}catch(e){showT('网络错误')}}
+
+// Course plan functions
+function loadPlans(q){
+  var url=q?'/api/courseplan?student='+encodeURIComponent(q):'/api/courseplan';
+  fetch(url).then(function(r){return r.json()}).then(function(d){
+    if(d.success){planData=d.data||[];renderPlans(planData)}else showT('加载失败');
+  }).catch(function(){document.getElementById('plansContent').innerHTML='<div class="empty">加载失败</div>'});
+}
+function renderPlans(data){
+  document.getElementById('planCount').textContent=data.length+'条';
+  if(!data.length){document.getElementById('plansContent').innerHTML='<div class="empty">暂无课程规划</div>';return}
+  var h='<table><tr><th>学生</th><th>年级</th><th>总课时</th><th>周数</th><th>创建日期</th><th>操作</th></tr>';
+  data.forEach(function(d){
+    h+='<tr><td><b>'+esc(d.student_name)+'</b></td><td>'+d.grade+'</td><td>'+d.total_hours+'课时</td><td>'+d.weeks_count+'周</td><td style="font-size:12px;color:#888">'+d.created_at+'</td>';
+    h+='<td><button class="btn btn-sm btn-outline" onclick="showPlanDetail('+d.id+')">查看</button> ';
+    h+='<a href="/?planId='+d.id+'" class="btn btn-sm btn-outline" style="color:#2980b9;border-color:#2980b9">编辑</a></td></tr>';
+  });
+  h+='</table>';document.getElementById('plansContent').innerHTML=h;
+}
+function showPlanDetail(id){
+  fetch('/api/courseplan/'+id).then(function(r){return r.json()}).then(function(d){
+    if(!d.success||!d.data){showT('加载失败');return}
+    currentPlanId=id;var p=d.data;
+    document.getElementById('planDetailTitle').textContent='- '+p.student_name+' ('+p.grade+')';
+    var h='<div style="margin-bottom:10px;font-size:13px">总课时: '+p.total_hours+' | 周数: '+p.weeks_count+'</div><div class="cal-weeks">';
+    if(p.plan_data&&p.plan_data.weeks){p.plan_data.weeks.forEach(function(w,wi){
+      h+='<div class="cal-week"><div class="cal-wh">第'+(wi+1)+'周（约'+w.th+'课时）</div>';
+      w.items.forEach(function(item){h+='<div class="cal-row"><span class="cal-mn">'+item.name+'</span><span class="cal-p">'+item.hours+'课时</span><span style="flex:1;font-size:12px;color:#555">'+(item.focus||'')+'</span></div>'});
+      h+='</div>';
+    })}else{h+='<div style="padding:12px;color:#888">暂无详细数据</div>'}
+    h+='</div>';document.getElementById('planDetailContent').innerHTML=h;
+    document.getElementById('planDetailCard').style.display='block';
+  }).catch(function(){showT('加载失败')});
+}
+function deletePlan(id){
+  if(!confirm('确定删除此课程规划?'))return;
+  fetch('/api/courseplan/'+id,{method:'DELETE'}).then(function(r){return r.json()}).then(function(d){
+    if(d.success){showT('已删除');document.getElementById('planDetailCard').style.display='none';loadPlans()}else showT('删除失败');
+  }).catch(function(){showT('删除失败')});
+}
+
+// Utility functions
+function gc(g){return 'gt '+({初一:'g7',初二:'g8',初三:'g9',高一:'g10',高二:'g11',高三:'g12'}[g]||'g7')}
+function esc(t){var e=document.createElement('div');e.textContent=t;return e.innerHTML}
+function showT(m){var t=document.getElementById('toast');t.textContent=m;t.className='ts show';setTimeout(function(){t.className='ts'},2500)}
+loadData();
+</script>
+</body>
+</html>
+
+
