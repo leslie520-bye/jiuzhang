@@ -2,6 +2,7 @@
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const diagnosticEngine = require('./lib/diagnostic-engine');
 // In-memory database
 var _dbStore = {diags:[], mods:[], subs:[], courses:[]};
 var db = {
