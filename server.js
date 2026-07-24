@@ -5,6 +5,8 @@ const path = require('path');
 const fs = require('fs');
 const initSqlJs = require('sql.js');
 const db = require('./database-local');
+const diagnosticEngine = require('./lib/diagnostic-engine');
+
 
 const app = express();
 const PORT = 3456;
@@ -86,6 +88,57 @@ async function start() {
       res.json({ success: true, ...result });
     } catch(e) { res.status(500).json({ success: false, error: e.message }); }
   });
+
+// === LLM Diagnosis ===
+app.post('/api/diagnose', async (req, res) => {
+  try {
+    const { questions, enableLLM } = req.body;
+    if (!questions || !questions.length) {
+      return res.status(400).json({ success: false, error: 'no questions' });
+    }
+    const result = await diagnosticEngine.diagnose(
+      { questions },
+      {
+        deepseekApiKey: process.env.DEEPSEEK_API_KEY || '',
+        enableLLM: enableLLM !== false,
+      }
+    );
+    res.json({ success: true, ...result });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/analyze-llm', async (req, res) => {
+  try {
+    const { wrongQuestions, enableLLM } = req.body;
+    if (!wrongQuestions || !wrongQuestions.length) {
+      return res.status(400).json({ success: false, error: 'no questions' });
+    }
+    const questions = wrongQuestions.map(function(q, i) {
+      return {
+        id: i + 1,
+        question: q.topic || q.question || '',
+        correctAnswer: q.correctAnswer || '',
+        studentAnswer: q.errorDescription || q.studentAnswer || '',
+        isCorrect: false,
+        errorDescription: q.errorDescription || q.errorType || '',
+        relatedKPs: q.relatedKPs || [],
+      };
+    });
+    const result = await diagnosticEngine.diagnose(
+      { questions },
+      {
+        deepseekApiKey: process.env.DEEPSEEK_API_KEY || '',
+        enableLLM: enableLLM !== false,
+      }
+    );
+    res.json({ success: true, ...result });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 app.listen(PORT, () => { console.log('[Server] AI\u6570\u5b66\u8bca\u65ad\u5de5\u4f5c\u53f0\u5df2\u542f\u52a8'); console.log('[Server] \u8bbf\u95ee: http://localhost:' + PORT); });
 }
 
